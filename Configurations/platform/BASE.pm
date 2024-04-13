@@ -4,6 +4,9 @@ use strict;
 use warnings;
 use Carp;
 
+#rtpxff:
+my $vcx_proj;
+
 # Assume someone set @INC right before loading this module
 use configdata;
 
@@ -36,6 +39,103 @@ sub bin         { return $_[0]->binname($_[1]) . $_[0]->binext() }
 sub dso         { return $_[0]->dsoname($_[1]) . $_[0]->dsoext() }
 sub sharedlib   { return __concat($_[0]->sharedname($_[1]), $_[0]->shlibext()) }
 sub staticlib   { return $_[0]->staticname($_[1]) . $_[0]->libext() }
+
+#rtpxff: 
+sub vcx_bin_open {
+    my $lib_file = $_[0]->binname($_[1]) . $_[0]->vcxprojext();
+    open $vcx_proj, ">>", $lib_file or die "can't open $lib_file\n";
+    vcx_print_init ($_[0]->binname($_[1]));
+}
+
+#rtpxff: 
+sub vcx_dll_open {
+    my $lib_file = $_[0]->binname($_[1]) . $_[0]->vcxprojext();
+    open $vcx_proj, ">>", $lib_file or die "can't open $lib_file\n";
+    vcx_print_init ($_[0]->binname($_[1]));
+}
+
+#rtpxff: 
+sub vcx_static_open {
+    my $lib_file = $_[0]->staticname($_[1]) . $_[0]->vcxprojext();
+    open $vcx_proj, ">>", $lib_file or die "can't open $lib_file\n";
+    vcx_print_init ($_[0]->staticname($_[1]));
+}
+
+#rtpxff: 
+sub vcx_print {
+    if (length $vcx_proj) {
+        print $vcx_proj $_[1];
+    }
+}
+
+#rtpxff: 
+sub vcx_print_init {
+    my $proj_name = $_[1];
+    print $vcx_proj "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<Project DefaultTargets=\"Build\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">
+  <ItemGroup Label=\"ProjectConfigurations\">
+    <ProjectConfiguration Include=\"Debug|x64\">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include=\"Release|x64\">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <Import Project=\"\$(VCTargetsPath)\\Microsoft.Cpp.Default.props\" />
+  <PropertyGroup Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\" Label=\"Configuration\">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\" Label=\"Configuration\">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project=\"\$(VCTargetsPath)\\Microsoft.Cpp.props\" />
+  <ImportGroup Label=\"ExtensionSettings\">
+  </ImportGroup>
+  <ImportGroup Label=\"Shared\">
+  </ImportGroup>
+  <ImportGroup Label=\"PropertySheets\" Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\">
+    <Import Project=\"\$(UserRootDir)\\Microsoft.Cpp.\$(Platform).user.props\" Condition=\"exists('\$(UserRootDir)\\Microsoft.Cpp.\$(Platform).user.props')\" Label=\"LocalAppDataPlatform\" />
+  </ImportGroup>
+  <ImportGroup Label=\"PropertySheets\" Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">
+    <Import Project=\"\$(UserRootDir)\\Microsoft.Cpp.\$(Platform).user.props\" Condition=\"exists('\$(UserRootDir)\\Microsoft.Cpp.\$(Platform).user.props')\" Label=\"LocalAppDataPlatform\" />
+  </ImportGroup>
+  <PropertyGroup Label=\"UserMacros\" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>proj_name</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>proj_name</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>";
+}
+
+#rtpxff: 
+sub vcx_finish {
+    print $vcx_proj "
+  <Import Project=\"\$(VCTargetsPath)\\Microsoft.Cpp.targets\" />
+  <ImportGroup Label=\"ExtensionTargets\">
+  </ImportGroup>
+  <Target Name=\"AfterClean\">
+  </Target>
+</Project>\n";
+}
 
 # More convenience functions for intermediary files
 sub def         { return __base($_[1], '.ld') . $_[0]->defext() }
