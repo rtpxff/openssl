@@ -1054,6 +1054,11 @@ $script: $sources configdata.pm
 	    "-o$target{build_file}" $sources > \$@
 EOF
   }
+
+  #rtpxff: dummy
+  sub vcxfinish {
+  }
+
   sub generatedir {
       my %args = @_;
       my $dir = $args{dir};

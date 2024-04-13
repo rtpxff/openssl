@@ -1149,10 +1149,9 @@ $script: $sources configdata.pm
 EOF
   }
 
+  #rtpxff: 
   sub vcxfinish {
       my %args = @_;
-
-      #rtpxff: 
       platform->vcx_finish();
       return <<"EOF";
 EOF

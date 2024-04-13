@@ -2019,6 +2019,11 @@ $script: $sources configdata.pm
 	chmod a+x $script
 EOF
   }
+
+  #rtpxff: dummy
+  sub vcxfinish {
+  }
+
   sub generatedir {
       my %args = @_;
       my $dir = $args{dir};
