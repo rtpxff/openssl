@@ -16,6 +16,10 @@ sub binext              { '.exe' }
 sub dsoext              { '.dll' }
 sub shlibext            { '.dll' }
 sub libext              { '.lib' }
+
+#rtpxff: extension sufix for static vcxproj for vc
+sub vcxprojext          { '.vcxproj' }
+
 sub defext              { '.def' }
 sub objext              { '.obj' }
 sub depext              { '.d' }
