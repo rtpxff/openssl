@@ -29,6 +29,9 @@ sub gentemplate {
     foreach (sort keys %{$generator->{info}->{htmldocs}}) { $generator->dodocs('html', $_); }
     foreach (sort keys %{$generator->{info}->{mandocs}})  { $generator->dodocs('man', $_); }
     foreach (sort keys %{$generator->{info}->{dirinfo}})  { $generator->dodir($_); }
+
+    #rtpxff: 
+    #foreach (@{$generator->{info}->{libraries}}) { $generator->dofinish($_); }
 }
 
 package OpenSSL::GenTemplate;
@@ -403,6 +406,7 @@ sub dolib {
                 $self->dogenerate($_, undef, undef, intent => "lib");
             }
         }
+        $self->emit('vcxfinish');
     }
     {
         # When putting static libraries together, we cannot rely on any
@@ -441,7 +445,9 @@ sub dolib {
         foreach (@objs) {
             $self->doobj($_, $lib, intent => "lib", attrs => { %attrs });
         }
+        $self->emit('vcxfinish');
     }
+    #$self->emit('vcxfinish');
     $cache{$lib} = 1;
 }
 
@@ -508,6 +514,7 @@ sub dobin {
     foreach (@objs) {
         $self->doobj($_, $bin, intent => "bin", attrs => { %attrs });
     }
+    $self->emit('vcxfinish');
     $cache{$bin} = 1;
 }
 
