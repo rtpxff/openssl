@@ -25,6 +25,24 @@
  $win_installroot = $ENV{$win_installroot};
  $win_commonroot = $ENV{$win_commonroot};
 
+ #rtpxff: 
+ sub vcx_bin_open {
+     my %args = @_;
+     platform->vcx_bin_open($args{bin});
+ }
+
+ #rtpxff: 
+ sub vcx_dll_open {
+     my %args = @_;
+     platform->vcx_dll_open($args{lib});
+ }
+
+ #rtpxff: 
+ sub vcx_static_open {
+     my %args = @_;
+     platform->vcx_static_open($args{lib});
+ }
+
  # This makes sure things get built in the order they need
  # to. You're welcome.
  sub dependmagic {
@@ -414,9 +432,9 @@ PROCESSOR= {- $config{processor} -}
 
 # The main targets ###################################################
 
-{- dependmagic('build_sw'); -}: build_libs_nodep build_modules_nodep build_programs_nodep copy-utils
+{- dependmagic('build_sw'); -}: build_programs_nodep copy-utils
 {- dependmagic('build_libs'); -}: build_libs_nodep
-{- dependmagic('build_modules'); -}: build_modules_nodep
+{- dependmagic('build_modules'); -}: 
 {- dependmagic('build_programs'); -}: build_programs_nodep
 
 build_docs: build_html_docs
@@ -425,8 +443,6 @@ build_html_docs: $(HTMLDOCS1) $(HTMLDOCS3) $(HTMLDOCS5) $(HTMLDOCS7)
 build_generated: $(GENERATED_MANDATORY)
 	@
 build_libs_nodep: $(LIBS) {- join(" ",map { platform->sharedlib_import($_) // () } @{$unified_info{libraries}}) -}
-	@
-build_modules_nodep: $(MODULES)
 	@
 build_programs_nodep: $(PROGRAMS) $(SCRIPTS)
 	@
@@ -446,7 +462,7 @@ build_all_generated: $(GENERATED_MANDATORY) $(GENERATED) build_docs
 all: build_sw {- "build_docs" if !$disabled{docs}; -}
 
 test: tests
-{- dependmagic('tests'); -}: build_programs_nodep build_modules_nodep copy-utils
+{- dependmagic('tests'); -}: build_programs_nodep copy-utils
 	$(MAKE) /$(MAKEFLAGS) run_tests
 run_tests:
 	@{- output_off() if $disabled{tests}; "\@rem" -}
@@ -712,6 +728,7 @@ reconfigure reconf:
       my %args = @_;
       my $deps = join(" ", compute_platform_depends(@{$args{deps}}));
       return <<"EOF";
+########################### XXXXXXX
 $args{target}: $deps
 EOF
   }
@@ -727,6 +744,7 @@ EOF
                               @{$args{generator}}[1..$#{$args{generator}}]);
       my $gen_incs = join("", map { " -I\"$_\"" } @{$args{generator_incs}});
       my $incs = join("", map { " -I\"$_\"" } @{$args{incs}});
+      my $incs_vcx = join("", map { ";".$_ } @{$args{incs}});
       my $defs = join("", map { " -D".$_ } @{$args{defs}});
       my $deps = join(' ',
                       map { file_name_is_absolute($_) || ($_ =~ m|^../|) ? "\"$_\"" : $_ }
@@ -740,6 +758,7 @@ EOF
           my $title = basename($args{src}, ".html");
           my $pod = $gen0;
           return <<"EOF";
+########################### PPPPPPPPPPP
 $args{src}: "$pod"
 	"\$(PERL)" "\$(SRCDIR)/util/mkpod2html.pl" -i "$pod" -o \$\@ -t "$title" -r "\$(SRCDIR)/doc"
 EOF
@@ -755,6 +774,7 @@ EOF
           my $ord_name =
               $args{generator}->[1] || basename(platform->dsoname($args{product}));
           return <<"EOF";
+########################### VVVVVVV
 $target: $gen0 $deps $mkdef
 	"\$(PERL)" "$mkdef"$ord_ver --type $args{intent} --ordinals $gen0 --name $ord_name --OS windows > $target
 EOF
@@ -775,6 +795,7 @@ EOF
 
           my $generator;
           if ($gen0 =~ /\.pl$/) {
+############################# PERL ASM
               $generator = '"$(PERL)"'.$gen_incs.' "'.$gen0.'"'.$gen_args
                   .' "$(PERLASM_SCHEME)"'.$incs.' '.$cppflags.$defs.' $(PROCESSOR)';
           } elsif ($gen0 =~ /\.S$/) {
@@ -784,12 +805,24 @@ EOF
           }
 
           if (defined($generator)) {
+              #rtpxff: 
+              platform->vcx_print("
+  <ItemGroup>
+    <ClCompile Include=\"$target\">
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\">$incs_vcx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">$incs_vcx</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemGroup>");
               return <<"EOF";
+########################### FFFFFFFF
 $target: "$gen0" $deps
 	cmd /C "set "ASM=\$(AS)" & $generator \$@"
 EOF
           }
+          #rtpxff: 
+          #platform->vcx_print("rrrr $deps\n");
           return <<"EOF";
+########################### GGGGGG
 $target: "$gen0" $deps
 	\$(CPP) /D__ASSEMBLER__ $incs $cppflags $defs "$gen0" > \$@.i
 	move /Y \$@.i \$@
@@ -839,7 +872,10 @@ EOF
                                                    sort keys %perlmoduledeps));
           my $perlmodules = join(' ', '', ( sort keys %perlmoduleincs ), @perlmodules);
 
+          #rtpxff: 
+          platform->vcx_print("--- $args{src} \"$gen0\" $deps\n");
           return <<"EOF";
+########################### SSSSSSS
 $args{src}: "$gen0" $deps
 	"\$(PERL)"$perlmodules "$dofile" "-o$target{build_file}" "$gen0"$gen_args > \$@
 EOF
@@ -851,6 +887,7 @@ EOF
           # Redo $gen0, to ensure that we have the proper extension.
           $gen0 = platform->bin($gen0);
           return <<"EOF";
+########################### OOOOOOOOO
 $args{src}: $gen0 $deps "\$(BLDDIR)\\util\\wrap.pl"
 	"\$(PERL)" "\$(BLDDIR)\\util\\wrap.pl" "$gen0"$gen_args > \$@
 EOF
@@ -859,6 +896,7 @@ EOF
           # Generic generator using Perl
           #
           return <<"EOF";
+########################### AAAAAAAAA
 $args{src}: "$gen0" $deps
 	"\$(PERL)"$gen_incs "$gen0"$gen_args > \$@
 EOF
@@ -878,6 +916,7 @@ EOF
                      map { file_name_is_absolute($_) || ($_ =~ m|^../|) ? "\"$_\"" : $_ }
                      (@srcs, @{$args{deps}}));
      my $incs = join("", map { ' -I"'.$_.'"' } @{$args{incs}});
+     my $incs_vcx = join("", map { ";".$_ } @{$args{incs}});
      my $defs = join("", map { " -D".$_ } @{$args{defs}});
      my $cflags = { shlib => ' $(LIB_CFLAGS)',
 		    lib => ' $(LIB_CFLAGS)',
@@ -895,6 +934,11 @@ EOF
      my $makedepcmd = $config{makedepcmd} unless $disabled{makedepend};
      if ($srcs[0] =~ /\.rc$/) {
          my $res = platform->res($args{obj});
+         #rtpxff: 
+         platform->vcx_print("
+  <ItemGroup>
+    <ResourceCompile Include=\"$deps\" />
+  </ItemGroup>");
          return <<"EOF";
 $res: $deps
 	\$(RC) \$(RCFLAGS) \$(RCOUTFLAG)\$\@ $srcs
@@ -903,7 +947,10 @@ EOF
      my $obj = platform->obj($args{obj});
      my $dep = platform->dep($args{obj});
      if ($srcs[0] =~ /\Q${asmext}\E$/) {
+         #rtpxff: 
+         #platform->vcx_print("ASM $deps\n");
          return <<"EOF";
+########################### RRRRRRR
 $obj: $deps
 	\$(AS) $asflags \$(ASOUTFLAG)\$\@ $srcs
 EOF
@@ -914,9 +961,16 @@ $obj: $deps
 	\$(AS) $asflags \$(ASOUTFLAG)\$\@ \$@.asm
 EOF
      }
+     #rtpxff: 
+     platform->vcx_print("
+  <ItemGroup>
+    <ClCompile Include=\"$deps\">
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\">$incs_vcx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">$incs_vcx</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemGroup>");
      my $recipe = <<"EOF";
-$obj: $deps
-	\$(CC) $cflags $defs -c \$(COUTFLAG)\$\@ $srcs
+########################### WWWWWWWW
 EOF
      $recipe .= <<"EOF"	unless $disabled{makedepend};
 	cmd /C "$makedepcmd $cflags $defs $srcs > $dep 2>&1"
@@ -952,26 +1006,12 @@ EOF
      my $implib_flag = $target{ld_implib_flag}
                        ? "$target{ld_implib_flag}$import"
                        : "";
+     #rtpxff: 
+     platform->vcx_dll_open($args{lib});
      return <<"EOF"
 # The import library may look like a static library, but it is not.
 # We MUST make the import library depend on the DLL, in case someone
 # mistakenly removes the latter.
-$import: $dll
-	$implib_rule
-$dll: $deps
-	IF EXIST $full.manifest DEL /F /Q $full.manifest
-	IF EXIST \$@ DEL /F /Q \$@
-	cmd /C "\$(LD) \$(LDFLAGS) \$(LIB_LDFLAGS) @<< $implib_flag || (DEL /Q \$(\@B).* $import & EXIT 1)"
-$objs$target{ld_resp_delim}\$(LDOUTFLAG)$dll$target{ldpostoutflag}$target{ld_resp_delim}$linklibs\$(LIB_EX_LIBS)$target{ld_resp_delim}$shared_def$target{ldresflag}$ress
-<<
-	IF EXIST $dll.manifest \\
-	   \$(MT) \$(MTFLAGS) \$(MTINFLAG)$dll.manifest \$(MTOUTFLAG)$dll
-	IF EXIST apps\\$dll DEL /Q /F apps\\$dll
-	IF EXIST test\\$dll DEL /Q /F test\\$dll
-	IF EXIST fuzz\\$dll DEL /Q /F fuzz\\$dll
-	COPY $dll apps
-	COPY $dll test
-	COPY $dll fuzz
 EOF
  }
  sub obj2dso {
@@ -995,13 +1035,7 @@ EOF
      my $deps = join(" ", @objs, @ress, @defs, @deps);
      my $shared_def = $target{lddefflag} . join("", @defs);
      return <<"EOF";
-$dso: $deps
-	IF EXIST $dso.manifest DEL /F /Q $dso.manifest
-	cmd /C "\$(LD) \$(LDFLAGS) \$(DSO_LDFLAGS) @<< || (DEL /Q \$(\@B).* $dso_n.* & EXIT 1)"
-$objs$target{ld_resp_delim}\$(LDOUTFLAG)$dso$target{ldpostoutflag}$target{ld_resp_delim}$linklibs \$(DSO_EX_LIBS)$target{ld_resp_delim}$shared_def$target{ldresflag}$ress
-<<
-	IF EXIST $dso.manifest \\
-	   \$(MT) \$(MTFLAGS) \$(MTINFLAG)$dso.manifest \$(MTOUTFLAG)$dso
+########################### SSSSSSSS
 EOF
  }
  sub obj2lib {
@@ -1010,7 +1044,10 @@ EOF
      my @objs = map { platform->obj($_) } @{$args{objs}};
      my $objs = join($target{ar_resp_delim}, @objs);
      my $deps = join(" ", @objs);
+     #rtpxff: 
+     platform->vcx_static_open($args{lib});
      return <<"EOF";
+########################### AAAAAAA
 $lib: $deps
 	\$(AR) \$(ARFLAGS) \$(AROUTFLAG)$lib @<<
 $objs
@@ -1031,14 +1068,10 @@ EOF
      my $ress = join($target{ld_resp_delim}, @ress);
      my $linklibs = join("", map { "$_$target{ld_resp_delim}" } @deps);
      my $deps = join(" ", @objs, @ress, @deps);
+     #rtpxff: 
+     platform->vcx_bin_open($args{bin});
      return <<"EOF";
-$bin: $deps
-	IF EXIST $bin.manifest DEL /F /Q $bin.manifest
-	\$(LD) \$(LDFLAGS) \$(BIN_LDFLAGS) @<<
-$objs$target{ld_resp_delim}\$(LDOUTFLAG)$bin$target{ldpostoutflag}$target{ld_resp_delim}$linklibs\$(BIN_EX_LIBS)$target{ldresflag}$target{ldresflag}$ress
-<<
-	IF EXIST $bin.manifest \\
-	   \$(MT) \$(MTFLAGS) \$(MTINFLAG)$bin.manifest \$(MTOUTFLAG)$bin
+########################### XXXXXXX
 EOF
   }
   sub in2script {
@@ -1049,14 +1082,19 @@ EOF
                                            "util", "dofile.pl")),
                            rel2abs($config{builddir}));
       return <<"EOF";
+########################### MMMMMMMM
 $script: $sources configdata.pm
 	"\$(PERL)" "-I\$(BLDDIR)" -Mconfigdata "$dofile" \\
 	    "-o$target{build_file}" $sources > \$@
 EOF
   }
 
-  #rtpxff: dummy
+  #rtpxff: 
   sub vcxfinish {
+      my %args = @_;
+      platform->vcx_finish();
+      return <<"EOF";
+EOF
   }
 
   sub generatedir {
@@ -1089,6 +1127,7 @@ EOF
       my $deps = join(" ", @deps);
       my $actions = join("\n", "", @actions);
       return <<"EOF";
+########################### HHHHHHHH
 $dir $dir\\ : $deps$actions
 EOF
   }
