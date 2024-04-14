@@ -873,7 +873,13 @@ EOF
           my $perlmodules = join(' ', '', ( sort keys %perlmoduleincs ), @perlmodules);
 
           #rtpxff: 
-          platform->vcx_print("--- $args{src} \"$gen0\" $deps\n");
+          platform->vcx_print("
+  <ItemGroup>
+    <ClCompile Include=\"$args{src}\">
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\">$incs_vcx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">$incs_vcx</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemGroup>");
           return <<"EOF";
 ########################### SSSSSSS
 $args{src}: "$gen0" $deps
@@ -892,13 +898,7 @@ $args{src}: $gen0 $deps "\$(BLDDIR)\\util\\wrap.pl"
 	"\$(PERL)" "\$(BLDDIR)\\util\\wrap.pl" "$gen0"$gen_args > \$@
 EOF
       } else {
-          #
-          # Generic generator using Perl
-          #
           return <<"EOF";
-########################### AAAAAAAAA
-$args{src}: "$gen0" $deps
-	"\$(PERL)"$gen_incs "$gen0"$gen_args > \$@
 EOF
       }
   }
@@ -940,6 +940,7 @@ EOF
     <ResourceCompile Include=\"$deps\" />
   </ItemGroup>");
          return <<"EOF";
+########################### PPPPPPP
 $res: $deps
 	\$(RC) \$(RCFLAGS) \$(RCOUTFLAG)\$\@ $srcs
 EOF
@@ -951,11 +952,10 @@ EOF
          #platform->vcx_print("ASM $deps\n");
          return <<"EOF";
 ########################### RRRRRRR
-$obj: $deps
-	\$(AS) $asflags \$(ASOUTFLAG)\$\@ $srcs
 EOF
      } elsif ($srcs[0] =~ /.S$/) {
          return <<"EOF";
+########################### DDDDDDD
 $obj: $deps
 	\$(CC) /EP -D__ASSEMBLER__ $cflags $defs $srcs > \$@.asm
 	\$(AS) $asflags \$(ASOUTFLAG)\$\@ \$@.asm
@@ -969,14 +969,10 @@ EOF
       <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">$incs_vcx</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>");
-     my $recipe = <<"EOF";
-########################### WWWWWWWW
+########################### EEEEEEEE
+    return <<"EOF";
 EOF
-     $recipe .= <<"EOF"	unless $disabled{makedepend};
-	cmd /C "$makedepcmd $cflags $defs $srcs > $dep 2>&1"
-EOF
-     return $recipe;
- }
+}
 
  # We *know* this routine is only called when we've configure 'shared'.
  # Also, note that even though the import library built here looks like
@@ -984,36 +980,12 @@ EOF
  sub obj2shlib {
      my %args = @_;
      my $lib = $args{lib};
-     my @objs = map { platform->convertext($_) }
-                grep { platform->isobj($_) }
-                @{$args{objs}};
-     my @ress = map { platform->convertext($_) }
-                grep { platform->isres($_) }
-                @{$args{objs}};
-     my @defs = map { platform->def($_) }
-                grep { platform->isdef($_) }
-                @{$args{objs}};
-     my @deps = compute_lib_depends(@{$args{deps}});
-     die "More than one exported symbols list" if scalar @defs > 1;
-     my $linklibs = join("", map { "$_$target{ld_resp_delim}" } @deps);
-     my $objs = join($target{ld_resp_delim}, @objs);
-     my $ress = join($target{ld_resp_delim}, @ress);
-     my $deps = join(" ", @objs, @ress, @defs, @deps);
-     my $import = platform->sharedlib_import($lib);
-     my $dll =  platform->sharedlib($lib);
-     my $shared_def = $target{lddefflag} . join("", @defs);
-     my $implib_rule = $target{ld_implib_rule} || "";
-     my $implib_flag = $target{ld_implib_flag}
-                       ? "$target{ld_implib_flag}$import"
-                       : "";
      #rtpxff: 
      platform->vcx_dll_open($args{lib});
      return <<"EOF"
-# The import library may look like a static library, but it is not.
-# We MUST make the import library depend on the DLL, in case someone
-# mistakenly removes the latter.
 EOF
  }
+
  sub obj2dso {
      my %args = @_;
      my $dso = platform->dso($args{module});
@@ -1035,23 +1007,16 @@ EOF
      my $deps = join(" ", @objs, @ress, @defs, @deps);
      my $shared_def = $target{lddefflag} . join("", @defs);
      return <<"EOF";
-########################### SSSSSSSS
+########################### CCCCCCC
 EOF
  }
  sub obj2lib {
      my %args = @_;
      my $lib = platform->staticlib($args{lib});
-     my @objs = map { platform->obj($_) } @{$args{objs}};
-     my $objs = join($target{ar_resp_delim}, @objs);
-     my $deps = join(" ", @objs);
      #rtpxff: 
      platform->vcx_static_open($args{lib});
      return <<"EOF";
-########################### AAAAAAA
-$lib: $deps
-	\$(AR) \$(ARFLAGS) \$(AROUTFLAG)$lib @<<
-$objs
-<<
+########################### ZZZZZZZZZZ
 EOF
  }
  sub obj2bin {
