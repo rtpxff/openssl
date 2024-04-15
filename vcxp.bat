@@ -7,11 +7,17 @@
 @del apps\*.vcxproj
 @del providers\*.vcxproj
 @del util\*.vcxproj
-call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
-perl Configure VC-WIN64B
+@call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+@perl Configure VC-WIN64B
 
-copy vc makefile
-copy vc.in makefile.in
-nmake
+@copy vc makefile
+@copy vc.in makefile.in
+@nmake
+
+@move test\*.vcxproj .
+@move fuzz\*.vcxproj .
+@move apps\*.vcxproj .
+@move providers\*.vcxproj .
+@move util\*.vcxproj .
 
 pause
