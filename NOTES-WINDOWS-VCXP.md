@@ -25,4 +25,7 @@ Quick start
  6. `nmake`
 
 
-Instead of 4. 5. 6. you can run vcxp.bat.
+Instead of 4. 5. 6. just run vcxp.bat.
+
+
+vcxp_add.bat is moving others vcxprojs to main directory, making they correct.
