@@ -977,9 +977,9 @@ EOF
      #rtpxff: 
      platform->vcx_print("
   <ItemGroup>
-    <ClCompile Include=\"$deps\">
-      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\">$incs</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">$incs</AdditionalIncludeDirectories>
+    <ClCompile Include=$srcs>
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Debug|x64'\">$incs_vcx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition=\"'\$(Configuration)|\$(Platform)'=='Release|x64'\">$incs_vcx</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>");
 
