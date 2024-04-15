@@ -1,9 +1,10 @@
 
-Native builds using Visual C++
-==============================
+Author: Robert T. Palka (rtpxff)
 
-The native builds using Visual C++ have a `VC-*` prefix.
+Generator creating vcxproj for all sub projects. All are for my own purpose.
 
+You use this at your own risk!
+I cannot guarantee anything at all, up to total loss of your data. 
 
 Quick start
 -----------
@@ -21,5 +22,7 @@ Quick start
  5. From the root of the OpenSSL source directory enter
     - `perl Configure VC-WIN64B`    for generate VC projects for 64-bit OpenSSL
 
-
  6. `nmake`
+
+
+Instead of 4. 5. 6. you can run vcxp.bat.
