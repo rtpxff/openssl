@@ -365,6 +365,7 @@ sub dolib {
         my @objs = ();
         my @foreign_objs = ();
         my @deps = ();
+        $self->emit('vcx_init');
         foreach (@{$self->{info}->{shared_sources}->{$lib} // []}) {
             if ($_ !~ m|\.a$|) {
                 push @objs, $_;
@@ -406,7 +407,7 @@ sub dolib {
                 $self->dogenerate($_, undef, undef, intent => "lib");
             }
         }
-        $self->emit('vcxfinish');
+        $self->emit('vcx_finish');
     }
     {
         # When putting static libraries together, we cannot rely on any
@@ -418,6 +419,7 @@ sub dolib {
         my @objs = ();
         my @sourcedeps = ();
         my @foreign_objs = ();
+        $self->emit('vcx_init');
         foreach (@{$self->{info}->{sources}->{$lib}}) {
             if ($_ !~ m|\.a$|) {
                 push @objs, $_;
@@ -445,9 +447,8 @@ sub dolib {
         foreach (@objs) {
             $self->doobj($_, $lib, intent => "lib", attrs => { %attrs });
         }
-        $self->emit('vcxfinish');
+        $self->emit('vcx_finish');
     }
-    #$self->emit('vcxfinish');
     $cache{$lib} = 1;
 }
 
@@ -494,6 +495,7 @@ sub dobin {
     my $self = shift;
     my $bin = shift;
     return "" if $cache{$bin};
+    $self->emit('vcx_init');
     my %attrs = %{$self->{info}->{attributes}->{programs}->{$bin} // {}};
     my @objs = @{$self->{info}->{sources}->{$bin}};
     my @deps = ( grep { $_ ne $bin } $self->resolvedepends($bin) );
@@ -514,7 +516,7 @@ sub dobin {
     foreach (@objs) {
         $self->doobj($_, $bin, intent => "bin", attrs => { %attrs });
     }
-    $self->emit('vcxfinish');
+    $self->emit('vcx_finish');
     $cache{$bin} = 1;
 }
 
