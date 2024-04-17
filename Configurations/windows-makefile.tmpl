@@ -25,6 +25,16 @@
  $win_installroot = $ENV{$win_installroot};
  $win_commonroot = $ENV{$win_commonroot};
 
+ ####################################################
+ #rtpxff: dummy
+ sub vcx_init {
+ }
+
+ #rtpxff: dummy
+ sub vcx_finish {
+ }
+ ####################################################
+
  # This makes sure things get built in the order they need
  # to. You're welcome.
  sub dependmagic {
@@ -1053,10 +1063,6 @@ $script: $sources configdata.pm
 	"\$(PERL)" "-I\$(BLDDIR)" -Mconfigdata "$dofile" \\
 	    "-o$target{build_file}" $sources > \$@
 EOF
-  }
-
-  #rtpxff: dummy
-  sub vcxfinish {
   }
 
   sub generatedir {
