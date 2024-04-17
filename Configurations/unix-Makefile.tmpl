@@ -10,6 +10,16 @@
 
      sub windowsdll { $config{target} =~ /^(?:Cygwin|mingw)/ }
 
+     ####################################################
+     #rtpxff: dummy
+     sub vcx_init {
+     }
+
+     #rtpxff: dummy
+     sub vcx_finish {
+     }
+     ####################################################
+
      # Shared AIX support is special. We put libcrypto[64].so.ver into
      # libcrypto.a and use libcrypto_a.a as static one, unless using
      # shared_target style aix-solib.  In that mode, create
@@ -2018,10 +2028,6 @@ $script: $sources configdata.pm
 	    "-o$target{build_file}" $sources > "$script"
 	chmod a+x $script
 EOF
-  }
-
-  #rtpxff: dummy
-  sub vcxfinish {
   }
 
   sub generatedir {
